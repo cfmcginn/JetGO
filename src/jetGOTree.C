@@ -32,9 +32,10 @@ bool jetGOTree::initJetGOTree(const std::string fileName)
   if(tempFileName.find(".root") != std::string::npos) tempFileName.replace(tempFileName.find(".root"), 5, "");
 
   TDatime* date = new TDatime();
-  tempFileName = tempFileName + std::to_string(date->GetDate()) + ".root";
+  tempFileName = tempFileName + "_" + std::to_string(date->GetDate()) + ".root";
 
-  constructedPath = constructedPath + "/" + tempFileName;
+  if(constructedPath.size() != 0) constructedPath = constructedPath + "/";
+  constructedPath = constructedPath + tempFileName;
 
   treeFile_p = new TFile(constructedPath.c_str(), "RECREATE");
   jetGOTree_p = new TTree("jetGOTree", "jetGOTree");
@@ -55,13 +56,15 @@ bool jetGOTree::fillJetGOTree(std::vector<fastjet::PseudoJet> inJet)
   treeFile_p->cd();
   nJt_ = 0;
 
-  for(unsigned int iter = 0; iter < TMath::Miniumum(inJet.size(), nMaxJet_); iter++){
+  for(unsigned int iter = 0; iter < TMath::Min((unsigned int)inJet.size(), (unsigned int)nMaxJet_); iter++){
     jtPt_[nJt_] = inJet.at(iter).pt();
     jtPhi_[nJt_] = inJet.at(iter).phi();
     jtEta_[nJt_] = inJet.at(iter).eta();
 
     nJt_++;
   }
+
+  jetGOTree_p->Fill();
 
   return true;
 }

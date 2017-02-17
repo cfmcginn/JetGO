@@ -22,7 +22,7 @@ class jetGOTree{
   TFile* treeFile_p = 0;
   TTree* jetGOTree_p = 0;
 
-  const unsigned int nMaxJet_ = 500;
+  const static unsigned int nMaxJet_ = 500;
   Int_t nJt_;
   Float_t jtPt_[nMaxJet_];
   Float_t jtPhi_[nMaxJet_];
