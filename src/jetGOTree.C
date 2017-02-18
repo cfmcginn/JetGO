@@ -69,12 +69,12 @@ bool jetGOTree::fillJetGOTree(std::vector<fastjet::PseudoJet> inJet)
   return true;
 }
 
-bool jetGOTree::writeJetGOTree()
+bool jetGOTree::writeJetGOTree(std::string newName)
 {
   if(!isInit) return false;
 
   treeFile_p->cd();
-  jetGOTree_p->Write("", TObject::kOverwrite);
+  jetGOTree_p->Write(newName.c_str(), TObject::kOverwrite);
 
   return true;
 }
