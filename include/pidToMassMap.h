@@ -1,6 +1,9 @@
 #ifndef PIDTOMASSMAP_H
 #define PIDTOMASSMAP_H
 
+#include <map>
+#include <cmath>
+
 class pidToMassMap{
  private:
   std::map<int, double> pdgIDMassMap =
@@ -29,9 +32,12 @@ class pidToMassMap{
  public:
   pidToMassMap(){return;}
 
-  getMassFromPID(int pid){
-    
+  double getMassFromPID(int pid){
+    auto search = pdgIDMassMap.find(std::abs(pid));
+    if(search != pdgIDMassMap.end()) return search->second;
+    else return -1.;
   }
-}
+
+};
 
 #endif

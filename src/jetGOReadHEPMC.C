@@ -1,5 +1,6 @@
 //class header
 #include "include/jetGOReadHEPMC.h"
+#include "include/pidToMassMap.h"
 
 //include cpp dependencies
 #include <fstream>
@@ -29,6 +30,8 @@ bool jetGOReadHEPMC::getNextEvent()
   outConstituent_.clear();
   bool newEvent = false;
   std::string tempStr;
+
+  pidToMassMap testPIDMap;
 
   if(globalDoDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
@@ -63,6 +66,8 @@ bool jetGOReadHEPMC::getNextEvent()
       //Fill out output constituents
       if(tempStrVect.at(1).find("1") != std::string::npos && tempStrVect.at(1).size() == 1) continue;
       if(tempStrVect.at(1).find("2") != std::string::npos && tempStrVect.at(1).size() == 1) continue;
+
+      std::cout << tempStrVect.at(2) << ", " << testPIDMap.getMassFromPID(std::stoi(tempStrVect.at(2))) << std::endl;
 
       if(globalDoDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
