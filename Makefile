@@ -8,7 +8,7 @@ ifeq "$(GCCVERSION)" "1"
 endif
 
 INCLUDE = -I /opt/local/include -I $(JETGOPATH) 
-FASTJET = `/Users/cfmcginn/Packages/FastJet/fastjet-install/bin/fastjet-config --cxxflags --libs --plugins`
+FASTJET = `/net/hisrv0001/home/cfmcginn/Packages/FastJet/fastjet-build/bin/fastjet-config --cxxflags --libs --plugins`
 #ROOT = `root-config --cflags --glibs`
 ROOT = -pthread -std=c++1y -m64 -I/Users/cfmcginn/Packages/ROOT6/root6-build/include -L/Users/cfmcginn/Packages/ROOT6/root6-build/lib -lGui -lCore -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -lMultiProc -lpthread -lm -ldl
 

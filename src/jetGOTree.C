@@ -10,11 +10,9 @@ jetGOTree::jetGOTree()
   return;
 }
 
-bool jetGOTree::initJetGOTree(const std::string fileName)
-{
-  if(isInit) return false;
-  isInit = true;
 
+bool jetGOTree::initWriteJetGOTree(const std::string fileName, const std::string branchName)
+{
   std::string tempFileName = fileName;
   std::string constructedPath = "";
 
@@ -28,7 +26,7 @@ bool jetGOTree::initJetGOTree(const std::string fileName)
       checkMakeDir(constructedPath);
     }
   }
-  
+
   if(tempFileName.find(".root") != std::string::npos) tempFileName.replace(tempFileName.find(".root"), 5, "");
 
   TDatime* date = new TDatime();
@@ -38,12 +36,52 @@ bool jetGOTree::initJetGOTree(const std::string fileName)
   constructedPath = constructedPath + tempFileName;
 
   treeFile_p = new TFile(constructedPath.c_str(), "RECREATE");
+  fileIsNewed = true;
+
+  return initWriteJetGOTree(branchName);
+}
+
+
+bool jetGOTree::initWriteJetGOTree(TFile* inTreeFile_p, const std::string branchName = "jt")
+{
+  treeFile_p = inTreeFile_p;
+  return initWriteJetGOTree(branchName);
+}
+
+
+bool jetGOTree::initWriteJetGOTree(const std::string branchName = "jt")
+{
+  if(isInitWrite || isInitRead) return false;
+  isInitWrite = true;
+
+  treeFile_p->cd();
   jetGOTree_p = new TTree("jetGOTree", "jetGOTree");
 
-  jetGOTree_p->Branch("nJt", &nJt_, "nJt/I");
-  jetGOTree_p->Branch("jtPt", jtPt_, "jtPt[nJt]/F");
-  jetGOTree_p->Branch("jtPhi", jtPhi_, "jtPhi[nJt]/F");
-  jetGOTree_p->Branch("jtEta", jtEta_, "jtEta[nJt]/F");
+  std::string capBranchName = branchName.substr(0, 1);
+  std::string lowerAlpha = "abcdefghijklmnopqrstuvwxyz";
+  std::string upperAlpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  
+  if(lowerAlpha.find(capBranchName) != std::string::npos){
+    capBranchName = upperAlpha.substr(lowerAlpha.find(capBranchName), 1);
+  }
+  capBranchName = capBranchName + branchName.substr(1, branchName.size()-1);
+
+  std::string nJtStr1 = "n" + capBranchName;
+  std::string nJtStr2 = nJtStr1 + "/I";
+
+  std::string jtPtStr1 = branchName + "Pt";
+  std::string jtPtStr2 = jtPtStr1 + "[" + nJtStr1 + "]/F";
+
+  std::string jtPhiStr1 = branchName + "Phi";
+  std::string jtPhiStr2 = jtPhiStr1 + "[" + nJtStr1 + "]/F";
+
+  std::string jtEtaStr1 = branchName + "Eta";
+  std::string jtEtaStr2 = jtEtaStr1 + "[" + nJtStr1 + "]/F";
+
+  jetGOTree_p->Branch(nJtStr1.c_str(), &nJt_, nJtStr2.c_str());
+  jetGOTree_p->Branch(jtPtStr1.c_str(), jtPt_, jtPtStr2.c_str());
+  jetGOTree_p->Branch(jtPhiStr1.c_str(), jtPhi_, jtPhiStr2.c_str());
+  jetGOTree_p->Branch(jtEtaStr1.c_str(), jtEta_, jtEtaStr2.c_str());
 
   return true;
 }
@@ -51,14 +89,14 @@ bool jetGOTree::initJetGOTree(const std::string fileName)
 
 bool jetGOTree::fillJetGOTree(std::vector<fastjet::PseudoJet> inJet)
 {
-  if(!isInit) return false;
+  if(!isInitWrite) return false;
 
   treeFile_p->cd();
   nJt_ = 0;
 
   for(unsigned int iter = 0; iter < TMath::Min((unsigned int)inJet.size(), (unsigned int)nMaxJet_); iter++){
     jtPt_[nJt_] = inJet.at(iter).pt();
-    jtPhi_[nJt_] = inJet.at(iter).phi();
+    jtPhi_[nJt_] = inJet.at(iter).phi_std();
     jtEta_[nJt_] = inJet.at(iter).eta();
 
     nJt_++;
@@ -71,7 +109,7 @@ bool jetGOTree::fillJetGOTree(std::vector<fastjet::PseudoJet> inJet)
 
 bool jetGOTree::writeJetGOTree(std::string newName)
 {
-  if(!isInit) return false;
+  if(!isInitWrite) return false;
 
   treeFile_p->cd();
   jetGOTree_p->Write(newName.c_str(), TObject::kOverwrite);
@@ -79,16 +117,95 @@ bool jetGOTree::writeJetGOTree(std::string newName)
   return true;
 }
 
+
+bool jetGOTree::initReadJetGOTree(TFile* inTreeFile_p, const std::string treeName, const std::string branchName)
+{
+  treeFile_p = inTreeFile_p;
+  initReadJetGOTree(treeName, branchName);
+  return true;
+}
+
+bool jetGOTree::initReadJetGOTree(const std::string treeName, const std::string branchName)
+{
+  jetGOTree_p = (TTree*)treeFile_p->Get(treeName.c_str());  
+  nEntries = jetGOTree_p->GetEntries();
+
+  std::string capBranchName = branchName.substr(0, 1);
+  std::string lowerAlpha = "abcdefghijklmnopqrstuvwxyz";
+  std::string upperAlpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+  if(lowerAlpha.find(capBranchName) != std::string::npos){
+    capBranchName = upperAlpha.substr(lowerAlpha.find(capBranchName), 1);
+  }
+  capBranchName = capBranchName + branchName.substr(1, branchName.size()-1);
+
+  std::string nJtStr1 = "n" + capBranchName;
+  std::string jtPtStr1 = branchName + "Pt";
+  std::string jtPhiStr1 = branchName + "Phi";
+  std::string jtEtaStr1 = branchName + "Eta";
+
+  jetGOTree_p->SetBranchStatus("*", 0);
+  jetGOTree_p->SetBranchStatus(nJtStr1.c_str(), 1);
+  jetGOTree_p->SetBranchStatus(jtPtStr1.c_str(), 1);
+  jetGOTree_p->SetBranchStatus(jtPhiStr1.c_str(), 1);
+  jetGOTree_p->SetBranchStatus(jtEtaStr1.c_str(), 1);
+
+  jetGOTree_p->SetBranchAddress(nJtStr1.c_str(), &nJt_);
+  jetGOTree_p->SetBranchAddress(jtPtStr1.c_str(), jtPt_);
+  jetGOTree_p->SetBranchAddress(jtPhiStr1.c_str(), jtPhi_);
+  jetGOTree_p->SetBranchAddress(jtEtaStr1.c_str(), jtEta_);
+
+  return true;
+}
+
+
+bool jetGOTree::getNextEvent()
+{
+  if(currentEntry >= nEntries) return false;
+
+  jetGOTree_p->GetEntry(currentEntry);  
+
+  currentEntry++;
+  return true;
+}
+
+
+std::vector<fastjet::PseudoJet> jetGOTree::getEventJet()
+{
+  std::vector<fastjet::PseudoJet> outJet;
+
+  for(unsigned int iter = 0; iter < nJt_; iter++){
+    TLorentzVector lorJet;
+    lorJet.SetPtEtaPhiM(jtPt_[iter], jtEta_[iter], jtPhi_[iter], 0);
+
+    fastjet::PseudoJet jet(lorJet.Px(), lorJet.Py(), lorJet.Pz(), lorJet.E());
+    outJet.push_back(jet);
+  }
+
+  return outJet;
+}
+
+
 bool jetGOTree::cleanJetGOTree()
 {
-  if(!isInit) return false;
-  isInit = false;
+  if(!isInitWrite && !isInitRead) return false;
 
-  treeFile_p->cd();
-  delete jetGOTree_p;
+  if(isInitWrite){
+    isInitWrite = false;
+    
+    treeFile_p->cd();
+    delete jetGOTree_p;
+    
+    if(fileIsNewed){
+      treeFile_p->Close();
+      delete treeFile_p;
+      fileIsNewed = false;
+    }
+  }
+  else if(isInitRead){
+    nEntries = -1;
+    currentEntry = 0;
+  }
 
-  treeFile_p->Close();
-  delete treeFile_p;
-
-  return false;
+  return true;
 }
