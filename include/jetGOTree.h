@@ -41,6 +41,7 @@ class jetGOTree{
   bool initWriteJetGOTree(const std::string fileName, const std::string branchName);
   bool initWriteJetGOTree(TFile* inTreeFile_p, const std::string branchName);
   bool initWriteJetGOTree(const std::string branchName);
+  std::string getFileName(std::string inFileName);
   bool fillJetGOTree(std::vector<fastjet::PseudoJet> inJet);
   bool writeJetGOTree(std::string newName = "");
 

@@ -1,9 +1,11 @@
 //include dependencies
 #include "include/jetGOTree.h"
+#include "include/checkMakeDir.h"
 
 //ROOT dependencies
 #include "TMath.h"
 #include "TDatime.h"
+#include "TLorentzVector.h"
 
 jetGOTree::jetGOTree()
 {
@@ -13,27 +15,7 @@ jetGOTree::jetGOTree()
 
 bool jetGOTree::initWriteJetGOTree(const std::string fileName, const std::string branchName)
 {
-  std::string tempFileName = fileName;
-  std::string constructedPath = "";
-
-  while(tempFileName.find("/") != std::string::npos){
-    constructedPath = constructedPath + tempFileName.substr(0, tempFileName.find("/")+1);
-    tempFileName.replace(0, tempFileName.find("/")+1, "");
-
-    if(!checkDir(constructedPath)){
-      std::cout << "Path component \'" << constructedPath << "\' of full path \'" << fileName << "\' does not exist, creating..." << std::endl;
-
-      checkMakeDir(constructedPath);
-    }
-  }
-
-  if(tempFileName.find(".root") != std::string::npos) tempFileName.replace(tempFileName.find(".root"), 5, "");
-
-  TDatime* date = new TDatime();
-  tempFileName = tempFileName + "_" + std::to_string(date->GetDate()) + ".root";
-
-  if(constructedPath.size() != 0) constructedPath = constructedPath + "/";
-  constructedPath = constructedPath + tempFileName;
+  std::string constructedPath = getFileName(fileName);
 
   treeFile_p = new TFile(constructedPath.c_str(), "RECREATE");
   fileIsNewed = true;
@@ -86,6 +68,40 @@ bool jetGOTree::initWriteJetGOTree(const std::string branchName = "jt")
   return true;
 }
 
+
+std::string jetGOTree::getFileName(std::string inFileName)
+{  
+  std::string tempFileName = inFileName;
+  std::string constructedPath = "";
+
+  while(tempFileName.find("/") != std::string::npos){
+    constructedPath = constructedPath + tempFileName.substr(0, tempFileName.find("/")+1);
+    tempFileName.replace(0, tempFileName.find("/")+1, "");
+
+    if(!checkDir(constructedPath)){
+      std::cout << "Path component \'" << constructedPath << "\' of full path \'" << inFileName << "\' does not exist, creating..." << std::endl;
+      checkMakeDir(constructedPath);
+    }
+  }
+
+  if(tempFileName.find(".root") != std::string::npos) tempFileName.replace(tempFileName.find(".root"), 5, "");
+
+  TDatime* date = new TDatime();
+  tempFileName = tempFileName + "_" + std::to_string(date->GetDate()) + ".root";
+
+  if(constructedPath.size() != 0) constructedPath = constructedPath + "/";
+  constructedPath = constructedPath + tempFileName;
+
+  unsigned int fileIter = 1;
+  while(checkFile(constructedPath)){
+    std::string newFileExt = "_" + std::to_string(fileIter) + ".root";
+    constructedPath.replace(constructedPath.find(".root")-2, 7, "");
+    constructedPath = constructedPath  + newFileExt;
+    fileIter++;
+  }
+
+  return constructedPath;
+}
 
 bool jetGOTree::fillJetGOTree(std::vector<fastjet::PseudoJet> inJet)
 {
@@ -174,7 +190,7 @@ std::vector<fastjet::PseudoJet> jetGOTree::getEventJet()
 {
   std::vector<fastjet::PseudoJet> outJet;
 
-  for(unsigned int iter = 0; iter < nJt_; iter++){
+  for(unsigned int iter = 0; iter < (unsigned int)nJt_; iter++){
     TLorentzVector lorJet;
     lorJet.SetPtEtaPhiM(jtPt_[iter], jtEta_[iter], jtPhi_[iter], 0);
 
