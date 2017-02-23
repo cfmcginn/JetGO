@@ -95,7 +95,10 @@ std::string jetGOTree::getFileName(std::string inFileName)
   unsigned int fileIter = 1;
   while(checkFile(constructedPath)){
     std::string newFileExt = "_" + std::to_string(fileIter) + ".root";
-    constructedPath.replace(constructedPath.find(".root")-2, 7, "");
+
+    if(constructedPath.substr(constructedPath.size() - 7, 1).find("_") != std::string::npos) constructedPath.replace(constructedPath.find(".root")-2, 7, "");
+    else constructedPath.replace(constructedPath.find(".root"), 5, "");
+
     constructedPath = constructedPath  + newFileExt;
     fileIter++;
   }
